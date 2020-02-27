@@ -134,6 +134,8 @@ class Server:
         result = await self.protocol.ping(addr, self.node.id)
         return Node(result[1], addr[0], addr[1]) if result[0] else None
 
+#==============================Modifié par Edmond===================================#
+
     async def get(self, key):
         """
         Get a key if the network has it.
@@ -188,61 +190,14 @@ class Server:
         # if this node is close too, then store here as well
         biggest = max([n.distance_to(node) for n in nodes])
         if self.node.distance_to(node) < biggest:
-            self.storage[dkey] = value
+            if  dkey not in self.Storage :
+                   self.Storage[dkey] = Set()
+            self.Storage[dkey].add(value)
         results = [self.protocol.call_store(n, dkey, value) for n in nodes]
         # return true only if at least one store call succeeded
         return any(await asyncio.gather(*results))
 
-
-################	Added By Edmond		#################
-
-    async def add(self, key, value):
-        """
-        Set the given string key to the given value in the network.
-        """
-        if not check_dht_value_type(value):
-            raise TypeError(
-                "Value must be of type int, float, bool, str, or bytes"
-            )
-        log.info("setting '%s' = '%s' on network", key, value)
-        dkey = digest(key)
-        return await self.add_digest(dkey, value)
-
-    async def add_digest(self, dkey, value):
-        """
-		        Set the given SHA1 digest key (bytes) to the given value in the
-        network.
-        """
-        node = Node(dkey)
-
-        nearest = self.protocol.router.find_neighbors(node)
-        if not nearest:
-            log.warning("There are no known neighbors to set key %s",
-                        dkey.hex())
-            return False
-
-        spider = NodeSpiderCrawl(self.protocol, node, nearest,
-                                 self.ksize, self.alpha)
-        nodes = await spider.find()
-        log.info("setting '%s' on %s", dkey.hex(), list(map(str, nodes)))
-
-        # if this node is close too, then store here as well
-        biggest = max([n.distance_to(node) for n in nodes])
-        if self.node.distance_to(node) < biggest:
-               liste = json.load(self.storage[dkey])
-               if(type(liste) is type([])):
-                        liste.add(value)
-                        self.storage[dkey] = json.dumps(liste)
-               if(self.storage[dkey]==None):
-                        self.storage[dkey] = value
-               else :
-                        log.warning("it's not a list !")
-        results = [self.protocol.call_store(n, dkey, value) for n in nodes]
-        # return true only if at least one store call succeeded
-        return any(await asyncio.gather(*results))
-
-################	      END 		#################
-
+#=======================END=============================#
 
     def save_state(self, fname):
         """

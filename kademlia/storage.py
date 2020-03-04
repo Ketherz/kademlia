@@ -51,11 +51,17 @@ class ForgetfulStorage(IStorage):
         self.data = OrderedDict()
         self.ttl = ttl
 
+#============================Modifié par Edmond===================================#
+
     def __setitem__(self, key, value):
-        if key in self.data:
-            del self.data[key]
-        self.data[key] = (time.monotonic(), value)
+        if key not in self.data:
+            print("clef non présente")
+            self.data[key] = set()
+        print(self.data[key])
+        self.data[key].add((time.monotonic(), value))
         self.cull()
+        print(self.data[key])
+
 
     def cull(self):
         for _, _ in self.iter_older_than(self.ttl):

@@ -56,9 +56,11 @@ class ForgetfulStorage(IStorage):
     def __setitem__(self, key, value):
         if key not in self.data:
             print("clef non présente")
-            self.data[key] = set()
+            self.data[key] = (time.monotonic(), set())
+        else:
+            self.data[key] = (time.monotonic(), self.data[key][1])
         print(self.data[key])
-        self.data[key].add((time.monotonic(), value))
+        self.data[key][1].add(value)
         self.cull()
         print(self.data[key])
 

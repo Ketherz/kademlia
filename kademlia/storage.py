@@ -52,14 +52,14 @@ class ForgetfulStorage(IStorage):
         self.ttl = ttl
 
     def __setitem__(self, key, value):
-        if key in self.data:
-            del self.data[key]
+#        if key in self.data:
+#            del self.data[key]
         self.data[key] = (time.monotonic(), value)
         self.cull()
 
     def cull(self):
         for _, _ in self.iter_older_than(self.ttl):
-            self.data.popitem(last=False)
+            self.data.remove(max(self.data))
 
     def get(self, key, default=None):
         self.cull()

@@ -190,9 +190,12 @@ class Server:
         # if this node is close too, then store here as well
         biggest = max([n.distance_to(node) for n in nodes])
         if self.node.distance_to(node) < biggest:
-            if  dkey not in self.Storage :
-                   self.Storage[dkey] = Set()
-            self.Storage[dkey].add(value)
+            if dkey.hex() not in self.storage :
+                   print("####################################key is absent")
+                   print("self.storage = ", self.storage)
+                   self.storage[dkey] = set()
+            else : print("####################################key is present")
+            self.storage[dkey].add(value)
         results = [self.protocol.call_store(n, dkey, value) for n in nodes]
         # return true only if at least one store call succeeded
         return any(await asyncio.gather(*results))

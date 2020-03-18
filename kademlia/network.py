@@ -206,40 +206,42 @@ class Server:
             )
         log.info("setting '%s' = '%s' on network", key, value)
         dkey = digest(key)
-        return await self.add_digest(dkey, value)
+        return await self.add_digest(dkey, value, key)
 
-    async def add_digest(self, dkey, value):
-        """
-		        Set the given SHA1 digest key (bytes) to the given value in the
-        network.
-        """
-        node = Node(dkey)
 
-        nearest = self.protocol.router.find_neighbors(node)
-        if not nearest:
-            log.warning("There are no known neighbors to set key %s",
-                        dkey.hex())
-            return False
+    async def add_digest(self, dkey, value, key):
+            """
+            Set the given SHA1 digest key (bytes) to the given value in the
+            network.
+            """
+            ancienne_valeur = await self.get(key)
+            if(type(ancienne_valeur) == type(None)):
+                ancienne_valeur = []
+            else :
+                ancienne_valeur = json.loads(ancienne_valeur)
+            node = Node(dkey)
+            if(value not in ancienne_valeur) :
+                ancienne_valeur.append(value)
+            value = json.dumps(ancienne_valeur)
 
-        spider = NodeSpiderCrawl(self.protocol, node, nearest,
-                                 self.ksize, self.alpha)
-        nodes = await spider.find()
-        log.info("setting '%s' on %s", dkey.hex(), list(map(str, nodes)))
+            nearest = self.protocol.router.find_neighbors(node)
+            if not nearest:
+                log.warning("There are no known neighbors to set key %s",
+                            dkey.hex())
+                return False
 
-        # if this node is close too, then store here as well
-        biggest = max([n.distance_to(node) for n in nodes])
-        if self.node.distance_to(node) < biggest:
-               liste = json.load(self.storage[dkey])
-               if(type(liste) is type([])):
-                        liste.add(value)
-                        self.storage[dkey] = json.dumps(liste)
-               if(self.storage[dkey]==None):
-                        self.storage[dkey] = value
-               else :
-                        log.warning("it's not a list !")
-        results = [self.protocol.call_store(n, dkey, value) for n in nodes]
-        # return true only if at least one store call succeeded
-        return any(await asyncio.gather(*results))
+            spider = NodeSpiderCrawl(self.protocol, node, nearest,
+                                     self.ksize, self.alpha)
+            nodes = await spider.find()
+            log.info("setting '%s' on %s", dkey.hex(), list(map(str, nodes)))
+
+            # if this node is close too, then store here as well
+            biggest = max([n.distance_to(node) for n in nodes])
+            if self.node.distance_to(node) < biggest:
+                self.storage[dkey] = value
+            results = [self.protocol.call_store(n, dkey, value) for n in nodes]
+            # return true only if at least one store call succeeded
+            return any(await asyncio.gather(*results))
 
 ################	      END 		#################
 
